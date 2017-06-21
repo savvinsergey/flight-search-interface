@@ -4,3 +4,6 @@ Installation will prepare all packages and build needed js files. After instalat
 
 # How to use
 Navigate to 'build' folder and open index.html
+
+
+p.s I found a little issue in the API. I think API should take into consideration user timezone for correct work
