@@ -146,6 +146,9 @@ var AirlinesCtrl = (function () {
         return this.airlinesMdl.getAll()
             .then(function () {
             response.send(_this.airlinesMdl.airlines);
+        })
+            .catch(function (err) {
+            throw new routing_controllers_1.InternalServerError(err);
         });
     };
     return AirlinesCtrl;
@@ -202,6 +205,9 @@ var AirportsCtrl = (function () {
         return this.airportsMdl.getAllByQuery(request.query.q || "")
             .then(function (airports) {
             response.send(airports);
+        })
+            .catch(function (err) {
+            throw new routing_controllers_1.InternalServerError(err);
         });
     };
     return AirportsCtrl;
@@ -263,6 +269,9 @@ var FlightsCtrl = (function () {
         })
             .then(function (flights) {
             response.send(flights);
+        })
+            .catch(function (err) {
+            throw new routing_controllers_1.InternalServerError(err);
         });
     };
     return FlightsCtrl;
@@ -299,7 +308,6 @@ exports.FlightsCtrl = FlightsCtrl;
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 var axios_1 = __webpack_require__(1);
-var routing_controllers_1 = __webpack_require__(0);
 var AirlinesMdl = (function () {
     function AirlinesMdl() {
         this.airlines = [];
@@ -318,7 +326,7 @@ var AirlinesMdl = (function () {
                 resolve(true);
             })
                 .catch(function (err) {
-                throw new routing_controllers_1.InternalServerError(err);
+                reject(err.response && err.response.data);
             });
         });
     };
@@ -364,7 +372,7 @@ var AirportsMdl = (function () {
                 });
             })
                 .catch(function (err) {
-                throw new routing_controllers_1.InternalServerError(err);
+                reject(err.response && err.response.data);
             });
         });
     };
@@ -421,7 +429,7 @@ var FlightsMdl = (function () {
                 });
             })
                 .catch(function (err) {
-                throw new routing_controllers_1.InternalServerError(err);
+                reject(err.response && err.response.data);
             });
         });
     };

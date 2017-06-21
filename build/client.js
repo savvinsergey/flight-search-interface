@@ -21221,7 +21221,10 @@ var SearchForm = (function () {
     };
     SearchForm.prototype.validateSearchForm = function (params) {
         var errors = [];
-        if (!params.date || !/^\d{4}\-\d{2}\-\d{2}$/.test(params.date)) {
+        var currentDate = moment().format("YYYY-MM-DD");
+        var currentTimeTimestamp = moment(currentDate, "YYYY-MM-DD").format("x");
+        var selectedDateTimestamp = moment(params.date, "YYYY-MM-DD").format("x");
+        if (!params.date || !/^\d{4}\-\d{2}\-\d{2}$/.test(params.date) || currentTimeTimestamp > selectedDateTimestamp) {
             errors.push({
                 field: "date",
                 element: "#date",
