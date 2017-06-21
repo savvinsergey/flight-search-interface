@@ -7,7 +7,7 @@
  *
  */
 
-import axios, {AxiosResponse} from "axios";
+import axios, {AxiosResponse, AxiosError} from "axios";
 import {InternalServerError, BadRequestError} from "routing-controllers";
 
 interface GetAllByAirlineCodeParams {
@@ -49,8 +49,8 @@ export class FlightsMdl {
                         flights: response.data || []
                     });
                 })
-                .catch((err) => {
-                    throw new InternalServerError(err);
+                .catch((err: AxiosError) => {
+                    reject(err.response && err.response.data);
                 });
         });
     }

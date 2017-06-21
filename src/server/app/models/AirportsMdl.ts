@@ -7,7 +7,7 @@
  *
  */
 
-import axios, {AxiosResponse} from "axios";
+import axios, {AxiosResponse, AxiosError} from "axios";
 import {InternalServerError, BadRequestError} from "routing-controllers";
 
 export class AirportsMdl {
@@ -28,8 +28,8 @@ export class AirportsMdl {
                         airports: response.data || []
                     });
                 })
-                .catch((err) => {
-                    throw new InternalServerError(err);
+                .catch((err: AxiosError) => {
+                    reject(err.response && err.response.data);
                 });
         });
     }

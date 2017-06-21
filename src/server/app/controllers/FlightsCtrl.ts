@@ -8,7 +8,7 @@
  */
 
 import {Request, Response} from "express";
-import {JsonController, Get, Res, Req, Param} from "routing-controllers";
+import {JsonController, Get, Res, Req, Param, InternalServerError} from "routing-controllers";
 
 import {FlightsMdl} from "../models/FlightsMdl.ts";
 
@@ -30,8 +30,11 @@ export class FlightsCtrl {
                 locationFrom: request.query.from || "",
                 locationTo:   request.query.to   || ""
             })
-            .then((flights) => {
+            .then(flights => {
                 response.send(flights);
+            })
+            .catch(err => {
+                throw new InternalServerError(err);
             });
     }
 
