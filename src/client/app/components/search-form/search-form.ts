@@ -71,7 +71,11 @@ export class SearchForm implements IComponent {
 
     private validateSearchForm(params: any): boolean {
         let errors: IFormError[] = [];
-        if (!params.date || !/^\d{4}\-\d{2}\-\d{2}$/.test(params.date)) {
+        let currentDate = moment().add(1,'day').format("YYYY-MM-DD");
+        let currentTimeTimestamp = moment(currentDate, "YYYY-MM-DD").format("x");
+        let selectedDateTimestamp = moment(params.date, "YYYY-MM-DD").format("x");
+
+        if (!params.date || !/^\d{4}\-\d{2}\-\d{2}$/.test(params.date) || currentTimeTimestamp > selectedDateTimestamp) {
             errors.push({
                 field: "date",
                 element: "#date",
