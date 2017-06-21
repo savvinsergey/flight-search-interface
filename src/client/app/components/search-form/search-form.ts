@@ -43,14 +43,21 @@ export class SearchForm implements IComponent {
         this.flightsModel = new FlightsModel();
     }
 
-    private generateDateRange(date) {
-        return [
-            moment(date, "YYYY-MM-DD")
-                .subtract(2, "day")
-                .format("YYYY-MM-DD"),
-            moment(date, "YYYY-MM-DD")
-                .subtract(1, "day")
-                .format("YYYY-MM-DD"),
+    private generateDateRange(date: string) {
+        let datesRange: string[] = [];
+        const currentDate: moment.Moment = moment({hour: 0, minute: 0, seconds: 0});
+
+        const dateBefore2: moment.Moment = <moment.Moment>moment(date, "YYYY-MM-DD").subtract(2, "day");
+        if (!dateBefore2.isBefore(currentDate)) {
+            datesRange.push(dateBefore2.format("YYYY-MM-DD"));
+        }
+
+        const dateBefore1: moment.Moment = <moment.Moment>moment(date, "YYYY-MM-DD").subtract(1, "day");
+        if (!dateBefore1.isBefore(currentDate)) {
+            datesRange.push(dateBefore1.format("YYYY-MM-DD"));
+        }
+
+        datesRange.push(...[
             date,
             moment(date, "YYYY-MM-DD")
                 .add(1, "day")
@@ -58,7 +65,9 @@ export class SearchForm implements IComponent {
             moment(date, "YYYY-MM-DD")
                 .add(2, "day")
                 .format("YYYY-MM-DD")
-        ];
+        ]);
+
+        return datesRange;
     }
 
     private hideErrorsMessages() {
@@ -71,11 +80,8 @@ export class SearchForm implements IComponent {
 
     private validateSearchForm(params: any): boolean {
         let errors: IFormError[] = [];
-        let currentDate = moment().add(1,'day').format("YYYY-MM-DD");
-        let currentTimeTimestamp = moment(currentDate, "YYYY-MM-DD").format("x");
-        let selectedDateTimestamp = moment(params.date, "YYYY-MM-DD").format("x");
 
-        if (!params.date || !/^\d{4}\-\d{2}\-\d{2}$/.test(params.date) || currentTimeTimestamp > selectedDateTimestamp) {
+        if (!params.date || !/^\d{4}\-\d{2}\-\d{2}$/.test(params.date)) {
             errors.push({
                 field: "date",
                 element: "#date",
@@ -147,7 +153,9 @@ export class SearchForm implements IComponent {
             .then(() => {
                 if (AirlinesModel.airlines.length) {
                     let datesRange: string[],
-                        errors: string[] = [];
+                        errors: {
+                            key: string[]
+                        } | {} = {};
 
                     datesRange = this.generateDateRange(date);
                     this.flightsModel.flights = {};
@@ -164,7 +172,11 @@ export class SearchForm implements IComponent {
                                     );
                                 } catch (err) {
                                     console.clear();
-                                    errors.push(err);
+                                    if (!errors[datesRange[indexDate]]) {
+                                        errors[datesRange[indexDate]] = [];
+                                    }
+
+                                    errors[datesRange[indexDate]].push(err);
                                 }
                             };
 
@@ -174,9 +186,12 @@ export class SearchForm implements IComponent {
                                         $("#loading").hide();
                                         $("#flight-search-btn").removeAttr("disabled");
 
-                                        if (errors.length) {
+                                        if (Object.keys(errors).length) {
                                             this.showErrorMessage("There were errors during receiving flights data. You can see them in the console");
-                                            errors.forEach(error => console.error(error));
+                                            for (let date in errors) {
+                                                errors[date].forEach(error => console.error(`${date}: ${error}`));
+                                            }
+
                                             return;
                                         }
 

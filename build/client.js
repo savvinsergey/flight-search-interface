@@ -21099,7 +21099,8 @@ var Datepicker = (function () {
         $(element)
             .datepicker({
             orientation: "bottom left",
-            format: "yyyy-mm-dd"
+            format: "yyyy-mm-dd",
+            startDate: new Date()
         });
     }
     return Datepicker;
@@ -21196,13 +21197,17 @@ var SearchForm = (function () {
         this.flightsModel = new flights_ts_1.default();
     }
     SearchForm.prototype.generateDateRange = function (date) {
-        return [
-            moment(date, "YYYY-MM-DD")
-                .subtract(2, "day")
-                .format("YYYY-MM-DD"),
-            moment(date, "YYYY-MM-DD")
-                .subtract(1, "day")
-                .format("YYYY-MM-DD"),
+        var datesRange = [];
+        var currentDate = moment({ hour: 0, minute: 0, seconds: 0 });
+        var dateBefore2 = moment(date, "YYYY-MM-DD").subtract(2, "day");
+        if (!dateBefore2.isBefore(currentDate)) {
+            datesRange.push(dateBefore2.format("YYYY-MM-DD"));
+        }
+        var dateBefore1 = moment(date, "YYYY-MM-DD").subtract(1, "day");
+        if (!dateBefore1.isBefore(currentDate)) {
+            datesRange.push(dateBefore1.format("YYYY-MM-DD"));
+        }
+        datesRange.push.apply(datesRange, [
             date,
             moment(date, "YYYY-MM-DD")
                 .add(1, "day")
@@ -21210,7 +21215,8 @@ var SearchForm = (function () {
             moment(date, "YYYY-MM-DD")
                 .add(2, "day")
                 .format("YYYY-MM-DD")
-        ];
+        ]);
+        return datesRange;
     };
     SearchForm.prototype.hideErrorsMessages = function () {
         $("#location-from, #location-to, #date")
@@ -21221,10 +21227,7 @@ var SearchForm = (function () {
     };
     SearchForm.prototype.validateSearchForm = function (params) {
         var errors = [];
-        var currentDate = moment().format("YYYY-MM-DD");
-        var currentTimeTimestamp = moment(currentDate, "YYYY-MM-DD").format("x");
-        var selectedDateTimestamp = moment(params.date, "YYYY-MM-DD").format("x");
-        if (!params.date || !/^\d{4}\-\d{2}\-\d{2}$/.test(params.date) || currentTimeTimestamp > selectedDateTimestamp) {
+        if (!params.date || !/^\d{4}\-\d{2}\-\d{2}$/.test(params.date)) {
             errors.push({
                 field: "date",
                 element: "#date",
@@ -21283,7 +21286,7 @@ var SearchForm = (function () {
         this.airlinesModel.fetchAirlines()
             .then(function () {
             if (airlines_ts_1.default.airlines.length) {
-                var datesRange_1, errors_1 = [];
+                var datesRange_1, errors_1 = {};
                 datesRange_1 = _this.generateDateRange(date);
                 _this.flightsModel.flights = {};
                 var _loop_1 = function (indexDate) {
@@ -21301,7 +21304,10 @@ var SearchForm = (function () {
                                     case 2:
                                         err_1 = _a.sent();
                                         console.clear();
-                                        errors_1.push(err_1);
+                                        if (!errors_1[datesRange_1[indexDate]]) {
+                                            errors_1[datesRange_1[indexDate]] = [];
+                                        }
+                                        errors_1[datesRange_1[indexDate]].push(err_1);
                                         return [3 /*break*/, 3];
                                     case 3: return [2 /*return*/];
                                 }
@@ -21312,9 +21318,14 @@ var SearchForm = (function () {
                             if (index === airlines_ts_1.default.airlines.length - 1 && indexDate === datesRange_1.length - 1) {
                                 $("#loading").hide();
                                 $("#flight-search-btn").removeAttr("disabled");
-                                if (errors_1.length) {
+                                if (Object.keys(errors_1).length) {
                                     _this.showErrorMessage("There were errors during receiving flights data. You can see them in the console");
-                                    errors_1.forEach(function (error) { return console.error(error); });
+                                    var _loop_3 = function (date_1) {
+                                        errors_1[date_1].forEach(function (error) { return console.error(date_1 + ": " + error); });
+                                    };
+                                    for (var date_1 in errors_1) {
+                                        _loop_3(date_1);
+                                    }
                                     return;
                                 }
                                 var container = document.querySelector(".container");
