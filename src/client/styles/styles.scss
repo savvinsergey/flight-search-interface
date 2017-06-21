@@ -1,0 +1,32 @@
+.typeahead {
+  width: calc(100% - 30px);
+  .dropdown-item {
+      padding: 10px 20px;
+  }
+}
+.datepicker{
+  padding: 10px;
+  td, th {
+    width: 40px;
+    height: 30px
+  }
+}
+.search-form {
+  small.error {
+    display: none;
+    color: firebrick
+  }
+}
+#loading {
+  margin-top: 30px;
+  display: none;
+}
+#search-errors-message {
+  color: firebrick;
+  margin-top: 30px;
+  display: none
+}
+#no-results-block{
+  margin-top: 50px;
+  color: orange;
+}
