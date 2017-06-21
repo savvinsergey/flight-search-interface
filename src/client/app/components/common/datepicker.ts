@@ -5,7 +5,8 @@ export class Datepicker {
         $(element)
             .datepicker({
                 orientation: "bottom left",
-                format: "yyyy-mm-dd"
+                format: "yyyy-mm-dd",
+                startDate: new Date()
             });
     }
 
