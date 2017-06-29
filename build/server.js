@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 10);
+/******/ 	return __webpack_require__(__webpack_require__.s = 11);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -74,12 +74,42 @@ module.exports = require("routing-controllers");
 
 /***/ }),
 /* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+/**
+ *
+ *  FLIGHT SERACH INTERFACE
+ *  Config file.
+ *
+ *  Endpoints settings
+ *
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.config = {
+    endpoints: {
+        airlines: {
+            getAll: "http://node.locomote.com/code-task/airlines"
+        },
+        flights: {
+            getAllByAirlineCode: "http://node.locomote.com/code-task/flight_search/"
+        },
+        airports: {
+            getAllByQuery: "http://node.locomote.com/code-task/airports"
+        }
+    }
+};
+
+
+/***/ }),
+/* 2 */
 /***/ (function(module, exports) {
 
 module.exports = require("axios");
 
 /***/ }),
-/* 2 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -93,11 +123,11 @@ module.exports = require("axios");
  *
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-__webpack_require__(9);
+__webpack_require__(10);
 var routing_controllers_1 = __webpack_require__(0);
-var AirlinesCtrl_ts_1 = __webpack_require__(3);
-var AirportsCtrl_ts_1 = __webpack_require__(4);
-var FlightsCtrl_ts_1 = __webpack_require__(5);
+var AirlinesCtrl_ts_1 = __webpack_require__(4);
+var AirportsCtrl_ts_1 = __webpack_require__(5);
+var FlightsCtrl_ts_1 = __webpack_require__(6);
 routing_controllers_1.createExpressServer({
     cors: true,
     controllers: [
@@ -109,7 +139,7 @@ routing_controllers_1.createExpressServer({
 
 
 /***/ }),
-/* 3 */
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -131,34 +161,22 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 var routing_controllers_1 = __webpack_require__(0);
-var AirlinesMdl_ts_1 = __webpack_require__(6);
+var AirlinesMdl_ts_1 = __webpack_require__(7);
 var AirlinesCtrl = (function () {
     function AirlinesCtrl() {
         this.airlinesMdl = new AirlinesMdl_ts_1.AirlinesMdl();
     }
-    AirlinesCtrl.prototype.getAll = function (request, response) {
-        var _this = this;
-        return this.airlinesMdl.getAll()
-            .then(function () {
-            response.send(_this.airlinesMdl.airlines);
-        })
-            .catch(function (err) {
-            throw new routing_controllers_1.InternalServerError(err);
-        });
+    AirlinesCtrl.prototype.getAll = function () {
+        return this.airlinesMdl.getAll();
     };
     return AirlinesCtrl;
 }());
 __decorate([
     routing_controllers_1.Get("/airlines"),
-    __param(0, routing_controllers_1.Req()),
-    __param(1, routing_controllers_1.Res()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], AirlinesCtrl.prototype, "getAll", null);
 AirlinesCtrl = __decorate([
@@ -169,7 +187,7 @@ exports.AirlinesCtrl = AirlinesCtrl;
 
 
 /***/ }),
-/* 4 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -196,28 +214,21 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var routing_controllers_1 = __webpack_require__(0);
-var AirportsMdl_ts_1 = __webpack_require__(7);
+var AirportsMdl_ts_1 = __webpack_require__(8);
 var AirportsCtrl = (function () {
     function AirportsCtrl() {
         this.airportsMdl = new AirportsMdl_ts_1.AirportsMdl();
     }
-    AirportsCtrl.prototype.getAllByQuery = function (request, response) {
-        return this.airportsMdl.getAllByQuery(request.query.q || "")
-            .then(function (airports) {
-            response.send(airports);
-        })
-            .catch(function (err) {
-            throw new routing_controllers_1.InternalServerError(err);
-        });
+    AirportsCtrl.prototype.getAllByQuery = function (request) {
+        return this.airportsMdl.getAllByQuery(request.query && (request.query.q || ""));
     };
     return AirportsCtrl;
 }());
 __decorate([
     routing_controllers_1.Get("/airports"),
     __param(0, routing_controllers_1.Req()),
-    __param(1, routing_controllers_1.Res()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], AirportsCtrl.prototype, "getAllByQuery", null);
 AirportsCtrl = __decorate([
@@ -228,7 +239,7 @@ exports.AirportsCtrl = AirportsCtrl;
 
 
 /***/ }),
-/* 5 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -255,23 +266,17 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var routing_controllers_1 = __webpack_require__(0);
-var FlightsMdl_ts_1 = __webpack_require__(8);
+var FlightsMdl_ts_1 = __webpack_require__(9);
 var FlightsCtrl = (function () {
     function FlightsCtrl() {
         this.flightsMdl = new FlightsMdl_ts_1.FlightsMdl();
     }
-    FlightsCtrl.prototype.getAllByAirlineCode = function (request, response, airlineCode) {
+    FlightsCtrl.prototype.getAllByAirlineCode = function (request, airlineCode) {
         return this.flightsMdl.getAllByAirlineCode({
             airlineCode: airlineCode,
-            date: request.query.date || "",
-            locationFrom: request.query.from || "",
-            locationTo: request.query.to || ""
-        })
-            .then(function (flights) {
-            response.send(flights);
-        })
-            .catch(function (err) {
-            throw new routing_controllers_1.InternalServerError(err);
+            date: request.query && (request.query.date || ""),
+            locationFrom: request.query && (request.query.from || ""),
+            locationTo: request.query && (request.query.to || "")
         });
     };
     return FlightsCtrl;
@@ -279,10 +284,9 @@ var FlightsCtrl = (function () {
 __decorate([
     routing_controllers_1.Get("/flights_search/:airline_code"),
     __param(0, routing_controllers_1.Req()),
-    __param(1, routing_controllers_1.Res()),
-    __param(2, routing_controllers_1.Param("airline_code")),
+    __param(1, routing_controllers_1.Param("airline_code")),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object, String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], FlightsCtrl.prototype, "getAllByAirlineCode", null);
 FlightsCtrl = __decorate([
@@ -293,7 +297,7 @@ exports.FlightsCtrl = FlightsCtrl;
 
 
 /***/ }),
-/* 6 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -307,27 +311,30 @@ exports.FlightsCtrl = FlightsCtrl;
  *
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-var axios_1 = __webpack_require__(1);
+var axios_1 = __webpack_require__(2);
+var routing_controllers_1 = __webpack_require__(0);
+var config_1 = __webpack_require__(1);
 var AirlinesMdl = (function () {
     function AirlinesMdl() {
         this.airlines = [];
     }
     AirlinesMdl.prototype.getAll = function () {
         var _this = this;
-        return new Promise(function (resolve, reject) {
-            if (_this.airlines.length) {
-                return resolve(true);
+        if (this.airlines.length) {
+            return Promise.resolve(this.airlines);
+        }
+        return axios_1.default.get(config_1.config.endpoints.airlines.getAll, {})
+            .then(function (response) {
+            if (!response || !response.data) {
+                return Promise.reject("Response obj is empty");
             }
-            axios_1.default.get("http://node.locomote.com/code-task/airlines", {})
-                .then(function (response) {
-                if (response.data) {
-                    _this.airlines = response.data;
-                }
-                resolve(true);
-            })
-                .catch(function (err) {
-                reject(err.response && err.response.data);
-            });
+            _this.airlines = response.data;
+            return Promise.resolve(_this.airlines);
+        })
+            .catch(function (err) {
+            throw new routing_controllers_1.InternalServerError(typeof err !== "string"
+                ? err.response && err.response.data
+                : err);
         });
     };
     return AirlinesMdl;
@@ -336,7 +343,7 @@ exports.AirlinesMdl = AirlinesMdl;
 
 
 /***/ }),
-/* 7 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -350,30 +357,29 @@ exports.AirlinesMdl = AirlinesMdl;
  *
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-var axios_1 = __webpack_require__(1);
+var axios_1 = __webpack_require__(2);
 var routing_controllers_1 = __webpack_require__(0);
+var config_1 = __webpack_require__(1);
 var AirportsMdl = (function () {
     function AirportsMdl() {
     }
-    AirportsMdl.prototype.getAllByQuery = function (query) {
+    AirportsMdl.prototype.validate = function (query) {
         if (!query) {
             throw new routing_controllers_1.BadRequestError("Bad 'q' param");
         }
-        return new Promise(function (resolve, reject) {
-            axios_1.default.get("http://node.locomote.com/code-task/airports", {
-                params: {
-                    q: query
-                }
-            })
-                .then(function (response) {
-                resolve({
-                    query: query,
-                    airports: response.data || []
-                });
-            })
-                .catch(function (err) {
-                reject(err.response && err.response.data);
-            });
+    };
+    AirportsMdl.prototype.getAllByQuery = function (query) {
+        this.validate(query);
+        return axios_1.default.get(config_1.config.endpoints.airports.getAllByQuery, {
+            params: {
+                q: query
+            }
+        })
+            .then(function (response) {
+            return Promise.resolve(response.data || []);
+        })
+            .catch(function (err) {
+            throw new routing_controllers_1.InternalServerError(err.response && err.response.data);
         });
     };
     return AirportsMdl;
@@ -382,7 +388,7 @@ exports.AirportsMdl = AirportsMdl;
 
 
 /***/ }),
-/* 8 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -396,12 +402,13 @@ exports.AirportsMdl = AirportsMdl;
  *
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-var axios_1 = __webpack_require__(1);
+var axios_1 = __webpack_require__(2);
 var routing_controllers_1 = __webpack_require__(0);
+var config_1 = __webpack_require__(1);
 var FlightsMdl = (function () {
     function FlightsMdl() {
     }
-    FlightsMdl.prototype.getAllByAirlineCode = function (params) {
+    FlightsMdl.prototype.validateParams = function (params) {
         if (!params.airlineCode) {
             throw new routing_controllers_1.BadRequestError("Bad 'airlineCode' param");
         }
@@ -414,23 +421,26 @@ var FlightsMdl = (function () {
         if (!params.locationTo || !/^[A-Z]{3}$/.test(params.locationTo)) {
             throw new routing_controllers_1.BadRequestError("Bad 'locationTo' param");
         }
-        return new Promise(function (resolve, reject) {
-            axios_1.default.get("http://node.locomote.com/code-task/flight_search/" + params.airlineCode, {
-                params: {
-                    date: params.date,
-                    from: params.locationFrom,
-                    to: params.locationTo
-                }
-            })
-                .then(function (response) {
-                resolve({
-                    params: params,
-                    flights: response.data || []
-                });
-            })
-                .catch(function (err) {
-                reject(err.response && err.response.data);
-            });
+    };
+    FlightsMdl.prototype.getAllByAirlineCode = function (params) {
+        this.validateParams(params);
+        return axios_1.default.get(config_1.config.endpoints.flights.getAllByAirlineCode + params.airlineCode, {
+            params: {
+                date: params.date,
+                from: params.locationFrom,
+                to: params.locationTo
+            }
+        })
+            .then(function (response) {
+            if (!response || !response.data) {
+                return Promise.reject("Response obj is empty");
+            }
+            return Promise.resolve(response.data);
+        })
+            .catch(function (err) {
+            throw new routing_controllers_1.InternalServerError(typeof err !== "string"
+                ? err.response && err.response.data
+                : err);
         });
     };
     return FlightsMdl;
@@ -439,16 +449,16 @@ exports.FlightsMdl = FlightsMdl;
 
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports) {
 
 module.exports = require("reflect-metadata");
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(2);
+module.exports = __webpack_require__(3);
 
 
 /***/ })

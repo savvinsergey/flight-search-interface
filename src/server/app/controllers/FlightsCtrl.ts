@@ -7,8 +7,8 @@
  *
  */
 
-import {Request, Response} from "express";
-import {JsonController, Get, Res, Req, Param, InternalServerError} from "routing-controllers";
+import {Request} from "express";
+import {JsonController, Get, Req, Param} from "routing-controllers";
 
 import {FlightsMdl} from "../models/FlightsMdl.ts";
 
@@ -22,19 +22,12 @@ export class FlightsCtrl {
 
     @Get("/flights_search/:airline_code")
     public getAllByAirlineCode(@Req() request: Request,
-                               @Res() response: Response,
                                @Param("airline_code") airlineCode: string) {
         return this.flightsMdl.getAllByAirlineCode({
                 airlineCode,
-                date: request.query.date || "",
-                locationFrom: request.query.from || "",
-                locationTo:   request.query.to   || ""
-            })
-            .then(flights => {
-                response.send(flights);
-            })
-            .catch(err => {
-                throw new InternalServerError(err);
+                date: request.query && (request.query.date || ""),
+                locationFrom: request.query && (request.query.from || ""),
+                locationTo: request.query && (request.query.to || "")
             });
     }
 

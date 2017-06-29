@@ -7,8 +7,8 @@
  *
  */
 
-import {Request, Response} from "express";
-import {JsonController, Get, Res, Req, InternalServerError} from "routing-controllers";
+import {Request} from "express";
+import {JsonController, Get, Req} from "routing-controllers";
 
 import {AirportsMdl} from "../models/AirportsMdl.ts";
 
@@ -21,15 +21,8 @@ export class AirportsCtrl {
     }
 
     @Get("/airports")
-    public getAllByQuery(@Req() request: Request,
-                         @Res() response: Response) {
-        return this.airportsMdl.getAllByQuery(request.query.q || "")
-            .then(airports => {
-                response.send(airports);
-            })
-            .catch(err => {
-                throw new InternalServerError(err);
-            });
+    public getAllByQuery(@Req() request: Request) {
+        return this.airportsMdl.getAllByQuery(request.query && (request.query.q || ""));
     }
 
 }

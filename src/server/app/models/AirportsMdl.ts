@@ -10,27 +10,29 @@
 import axios, {AxiosResponse, AxiosError} from "axios";
 import {InternalServerError, BadRequestError} from "routing-controllers";
 
+import {config} from "../config";
+
 export class AirportsMdl {
-    public getAllByQuery(query: string) {
+    private validate(query: string): void {
         if (!query) {
             throw new BadRequestError("Bad 'q' param");
         }
+    }
 
-        return new Promise((resolve, reject) => {
-            axios.get("http://node.locomote.com/code-task/airports", {
-                    params: {
-                        q: query
-                    }
-                })
-                .then((response: AxiosResponse) => {
-                    resolve({
-                        query,
-                        airports: response.data || []
-                    });
-                })
-                .catch((err: AxiosError) => {
-                    reject(err.response && err.response.data);
-                });
-        });
+    public getAllByQuery(query: string): Promise<any> {
+        this.validate(query);
+
+        return axios.get(config.endpoints.airports.getAllByQuery, {
+                params: {
+                    q: query
+                }
+            })
+            .then((response: AxiosResponse) => {
+                return Promise.resolve(response.data || []);
+            })
+            .catch((err: AxiosError) => {
+                throw new InternalServerError(err.response && err.response.data);
+            });
+
     }
 }

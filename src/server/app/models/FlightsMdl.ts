@@ -10,6 +10,8 @@
 import axios, {AxiosResponse, AxiosError} from "axios";
 import {InternalServerError, BadRequestError} from "routing-controllers";
 
+import {config} from "../config";
+
 interface GetAllByAirlineCodeParams {
     airlineCode: string;
     date: string;
@@ -18,7 +20,7 @@ interface GetAllByAirlineCodeParams {
 }
 
 export class FlightsMdl {
-    public getAllByAirlineCode(params: GetAllByAirlineCodeParams) {
+    private validateParams(params: GetAllByAirlineCodeParams): void {
         if (!params.airlineCode) {
             throw new BadRequestError("Bad 'airlineCode' param");
         }
@@ -34,24 +36,31 @@ export class FlightsMdl {
         if (!params.locationTo || !/^[A-Z]{3}$/.test(params.locationTo)) {
             throw new BadRequestError("Bad 'locationTo' param");
         }
+    }
 
-        return new Promise((resolve, reject) => {
-            axios.get("http://node.locomote.com/code-task/flight_search/" + params.airlineCode, {
-                    params: {
-                        date: params.date,
-                        from: params.locationFrom,
-                        to:   params.locationTo
-                    }
-                })
-                .then((response: AxiosResponse) => {
-                    resolve({
-                        params,
-                        flights: response.data || []
-                    });
-                })
-                .catch((err: AxiosError) => {
-                    reject(err.response && err.response.data);
-                });
-        });
+    public getAllByAirlineCode(params: GetAllByAirlineCodeParams): Promise<any> {
+        this.validateParams(params);
+
+        return axios.get(config.endpoints.flights.getAllByAirlineCode + params.airlineCode, {
+                params: {
+                    date: params.date,
+                    from: params.locationFrom,
+                    to:   params.locationTo
+                }
+            })
+            .then((response: AxiosResponse) => {
+                if (!response || !response.data) {
+                    return Promise.reject("Response obj is empty");
+                }
+
+                return Promise.resolve(response.data);
+            })
+            .catch((err: AxiosError) => {
+                throw new InternalServerError(
+                    typeof err !== "string"
+                        ? err.response && err.response.data
+                        : err
+                );
+            });
     }
 }

@@ -10,26 +10,31 @@
 import axios, {AxiosResponse, AxiosError} from "axios";
 import {InternalServerError} from "routing-controllers";
 
+import {config} from "../config";
+
 export class AirlinesMdl {
     public airlines: Object[] = [];
 
-    public getAll() {
-        return new Promise((resolve, reject) => {
-            if (this.airlines.length) {
-                return resolve(true);
-            }
+    public getAll(): Promise<any> {
+        if (this.airlines.length) {
+            return Promise.resolve(this.airlines);
+        }
 
-            axios.get("http://node.locomote.com/code-task/airlines", {})
-                .then((response: AxiosResponse) => {
-                    if (response.data) {
-                        this.airlines = response.data;
-                    }
+        return axios.get(config.endpoints.airlines.getAll, {})
+            .then((response: AxiosResponse) => {
+                if (!response || !response.data) {
+                    return Promise.reject("Response obj is empty");
+                }
 
-                    resolve(true);
-                })
-                .catch((err: AxiosError) => {
-                    reject(err.response && err.response.data);
-                });
-        });
+                this.airlines = response.data;
+                return Promise.resolve(this.airlines);
+            })
+            .catch((err: AxiosError | string) => {
+                throw new InternalServerError(
+                    typeof err !== "string"
+                    ? err.response && err.response.data
+                    : err
+                );
+            });
     }
 }

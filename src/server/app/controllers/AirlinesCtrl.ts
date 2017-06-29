@@ -7,8 +7,7 @@
  *
  */
 
-import {Request, Response} from "express";
-import {JsonController, Get, Res, Req, InternalServerError} from "routing-controllers";
+import {JsonController, Get} from "routing-controllers";
 
 import {AirlinesMdl} from "../models/AirlinesMdl.ts";
 
@@ -21,14 +20,7 @@ export class AirlinesCtrl {
     }
 
     @Get("/airlines")
-    public getAll(@Req() request: Request,
-                  @Res() response: Response) {
-        return this.airlinesMdl.getAll()
-            .then(() => {
-                response.send(this.airlinesMdl.airlines);
-            })
-            .catch(err => {
-                throw new InternalServerError(err);
-            });
+    public getAll() {
+        return this.airlinesMdl.getAll();
     }
 }
