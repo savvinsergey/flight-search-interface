@@ -1,28 +1,29 @@
 import * as moment from "moment";
 
-import {IComponent} from "../../interfaces.ts";
+import {IComponent, IFormError} from "../../interfaces.ts";
+import {config} from "../../config.ts";
 
 import AirlinesModel from "../../models/airlines.ts";
 import AirportsModel from "../../models/airports.ts";
 import FlightsModel from "../../models/flights.ts";
 
 import {SearchResults} from '../../components/search-results/search-results.ts';
-import {Typeahead} from '../../components/common/typeahead.ts';
-import {Datepicker} from '../../components/common/datepicker.ts';
+import {Typeahead} from '../../components/common/typeahead/typeahead.ts';
+import {Datepicker} from '../../components/common/datepicker/datepicker.ts';
 
 // ----------- Interfaces ------------
 
-interface IFormError {
-    field: string;
-    element: string;
-    message: string;
+interface IFormData {
+    locationFrom: string;
+    locationTo: string;
+    date: string;
 }
 
 // ----------- Component code ------------
 
 export class SearchForm implements IComponent {
-    private template: any;
-    private element: Element;
+    public template: any;
+    public element: Element;
 
     // Models
     private airportsModel: AirportsModel;
@@ -43,67 +44,35 @@ export class SearchForm implements IComponent {
         this.flightsModel = new FlightsModel();
     }
 
-    private generateDateRange(date: string) {
+    private generateDateRange(date: string): string[] {
         let datesRange: string[] = [];
-        const currentDate: moment.Moment = moment({hour: 0, minute: 0, seconds: 0});
+        const beforeToday: number = config.countSearchDays.beforeToday,
+              afterToday: number = config.countSearchDays.afterToday,
+              currentDate: moment.Moment = moment({hour: 0, minute: 0, seconds: 0});
 
-        const dateBefore2: moment.Moment = <moment.Moment>moment(date, "YYYY-MM-DD").subtract(2, "day");
-        if (!dateBefore2.isBefore(currentDate)) {
-            datesRange.push(dateBefore2.format("YYYY-MM-DD"));
+        for (let index = beforeToday; index >= 1; index--) {
+            const prevDate: moment.Moment = <moment.Moment>moment(date, "YYYY-MM-DD").subtract(index, "day");
+            if (!prevDate.isBefore(currentDate)) {
+                datesRange.push(prevDate.format("YYYY-MM-DD"));
+            }
         }
 
-        const dateBefore1: moment.Moment = <moment.Moment>moment(date, "YYYY-MM-DD").subtract(1, "day");
-        if (!dateBefore1.isBefore(currentDate)) {
-            datesRange.push(dateBefore1.format("YYYY-MM-DD"));
-        }
+        datesRange.push(date);
 
-        datesRange.push(...[
-            date,
-            moment(date, "YYYY-MM-DD")
-                .add(1, "day")
-                .format("YYYY-MM-DD"),
-            moment(date, "YYYY-MM-DD")
-                .add(2, "day")
-                .format("YYYY-MM-DD")
-        ]);
+        for (let index = 1; index <= afterToday; index++) {
+            const nextDate: moment.Moment = <moment.Moment>moment(date, "YYYY-MM-DD").add(index, "day");
+            datesRange.push(nextDate.format("YYYY-MM-DD"));
+        }
 
         return datesRange;
     }
 
-    private hideErrorsMessages() {
-        $("#location-from, #location-to, #date")
-            .parent()
-            .removeClass("has-error")
-            .find("small")
-            .hide();
-    }
-
-    private validateSearchForm(params: any): boolean {
-        let errors: IFormError[] = [];
-
-        if (!params.date || !/^\d{4}\-\d{2}\-\d{2}$/.test(params.date)) {
-            errors.push({
-                field: "date",
-                element: "#date",
-                message: "Bad 'date' param"
-            });
-        }
-
-        if (!params.locationFrom || !/^[A-Z]{3}$/.test(params.locationFrom)) {
-            errors.push({
-                field: "locationFrom",
-                element: "#location-from",
-                message: "Bad 'locationFrom' param"
-            });
-        }
-
-        if (!params.locationTo || !/^[A-Z]{3}$/.test(params.locationTo)) {
-            errors.push({
-                field: "locationTo",
-                element: "#location-to",
-                message: "Bad 'locationTo' param"
-            });
-        }
+    private validateSearchForm(params: IFormData): boolean {
+        let errors: IFormError[] = [
+            ...this.datePickerCmp.validate(params.date),
+            ...this.locationFromCmp.validate(params.locationFrom),
+            ...this.locationToCmp.validate(params.locationTo)
+        ];
 
         // ----------/ /
 
@@ -117,10 +86,37 @@ export class SearchForm implements IComponent {
                     .text(error.message)
                     .show();
             });
-            return;
+            return false;
         }
 
         return true;
+    }
+
+    private validateResults(results: (boolean | string)[]): boolean {
+        let hasErrors: boolean = false;
+
+        if (results.length) {
+            results.forEach((item: boolean | string) => {
+                if (item !== true) {
+                    hasErrors = true;
+                    console.error(`${item}`);
+                }
+            });
+
+            if (hasErrors) {
+                this.showErrorMessage("There were errors during receiving flights data. You can see them in the console");
+            }
+        }
+
+        return hasErrors;
+    }
+
+    private hideErrorsMessages(): void {
+        $("#location-from, #location-to, #date")
+            .parent()
+            .removeClass("has-error")
+            .find("small")
+            .hide();
     }
 
     private showErrorMessage(message: string): void {
@@ -129,10 +125,53 @@ export class SearchForm implements IComponent {
             .show();
     }
 
-    private searchFlight() {
-        const locationFrom: string = $("#location-from").data("code"),
-              locationTo: string = $("#location-to").data("code"),
-              date: string = $("#date").val();
+    private isLoading(value: boolean): void {
+        if (value) {
+            $("#search-errors-message").hide();
+            $("#loading").show();
+            $("#flight-search-btn").attr("disabled", "disabled");
+        } else {
+            $("#loading").hide();
+            $("#flight-search-btn").removeAttr("disabled");
+        }
+    }
+
+    private generateAndExecuteSearchRequests(datesRange: string[],
+                                            locationFrom: string,
+                                            locationTo: string): Promise<any> {
+        let promisesFunctions: Function[] = [];
+        for (let indexDate = 0; indexDate < datesRange.length; indexDate++) {
+            for (let index = 0; index < AirlinesModel.airlines.length; index++) {
+                const flightSearchTask: Function = this.flightsModel.find
+                    .bind(
+                        this.flightsModel,
+                        AirlinesModel.airlines[index].code,
+                        locationFrom,
+                        locationTo,
+                        datesRange[indexDate]
+                    );
+
+                promisesFunctions.push(flightSearchTask);
+            }
+        }
+
+        let responseProcessing = (request: Function, result: any) =>
+                request()
+                    .then(Array.prototype.concat.bind(result))
+                    .catch(Array.prototype.concat.bind(result));
+
+        return promisesFunctions.reduce((promise: Promise<any>, request: Function) =>
+            promise
+                .then(result => responseProcessing(request, result))
+                .catch(error => responseProcessing(request, error))
+            , Promise.resolve([])
+        );
+    }
+
+    private searchFlights(): void | undefined {
+        const locationFrom: string = $("input", this.locationFromCmp.element).data("code"),
+              locationTo: string = $("input", this.locationToCmp.element).data("code"),
+              date: string = $("input", this.datePickerCmp.element).val();
 
         // Destroy previous results
         if (this.searchResultsCmp) {
@@ -145,102 +184,81 @@ export class SearchForm implements IComponent {
             return;
         }
 
-        $("#search-errors-message").hide();
-        $("#loading").show();
-        $("#flight-search-btn").attr("disabled", "disabled");
-
+        this.isLoading(true);
         this.airlinesModel.fetchAirlines()
             .then(() => {
-                if (AirlinesModel.airlines.length) {
-                    let datesRange: string[],
-                        errors: {
-                            key: string[]
-                        } | {} = {};
+                let datesRange: string[] = this.generateDateRange(date);
 
-                    datesRange = this.generateDateRange(date);
-                    this.flightsModel.flights = {};
-
-                    for (let indexDate = 0; indexDate < datesRange.length; indexDate++) {
-                        for (let index = 0; index < AirlinesModel.airlines.length; index++) {
-                            let findFlightAsync = async () => {
-                                try {
-                                    await this.flightsModel.find(
-                                        AirlinesModel.airlines[index].code,
-                                        locationFrom,
-                                        locationTo,
-                                        datesRange[indexDate]
-                                    );
-                                } catch (err) {
-                                    console.clear();
-                                    if (!errors[datesRange[indexDate]]) {
-                                        errors[datesRange[indexDate]] = [];
-                                    }
-
-                                    errors[datesRange[indexDate]].push(err);
-                                }
-                            };
-
-                            findFlightAsync()
-                                .then(() => {
-                                    if (index === AirlinesModel.airlines.length - 1 && indexDate === datesRange.length - 1) {
-                                        $("#loading").hide();
-                                        $("#flight-search-btn").removeAttr("disabled");
-
-                                        if (Object.keys(errors).length) {
-                                            this.showErrorMessage("There were errors during receiving flights data. You can see them in the console");
-                                            for (let date in errors) {
-                                                errors[date].forEach(error => console.error(`${date}: ${error}`));
-                                            }
-
-                                            return;
-                                        }
-
-                                        let container: Element = document.querySelector(".container");
-                                        this.searchResultsCmp = new SearchResults(container);
-
-                                        this.searchResultsCmp.render({
-                                            selectedDate: date,
-                                            flights: this.flightsModel.flights
-                                        });
-                                    }
-                                });
+                this.flightsModel.flights = {};
+                this.generateAndExecuteSearchRequests(datesRange, locationFrom, locationTo)
+                    .then((result: (string | boolean)[]) => {
+                        this.isLoading(false);
+                        if (this.validateResults(result)) {
+                            return;
                         }
-                    }
-                } else {
-                    this.showErrorMessage("List of airlines is empty");
-                }
+
+                        this.renderSearchResults(date);
+                    });
             })
             .catch((err: string) => {
                 this.showErrorMessage("Couldn't get list of airlines. You can see an error in the console");
+                this.isLoading(false);
 
-                console.clear();
+                throw new Error(err);
+            });
+    }
+
+    private searchAirports(query: string, process: Function): void {
+        this.airportsModel.searchByName(query)
+            .then((data: Object[]) => process(data))
+            .catch((err: string) => {
                 console.error(err);
             });
     }
 
-    private searchAirports(query, process) {
-        this.airportsModel.searchByName(query)
-            .then((data: Object[]) => process(data))
-            .catch((err) => {
-                console.clear();
-                console.error(err);
-            });
+    private renderSearchResults(date: string): void {
+        let container: Element = <Element>document.querySelector(".container");
+        this.searchResultsCmp = new SearchResults(container);
+
+        this.searchResultsCmp.render({
+            selectedDate: date,
+            flights: this.flightsModel.flights
+        });
     }
 
     public render(data: Object): void {
         this.element = $(this.template(data)).appendTo(this.container).get(0);
 
         setTimeout(() => {
-            let searchAirportsFn: Function = this.searchAirports.bind(this);
+            let searchAirportsFn: Function = this.searchAirports.bind(this),
+                submitButton: Element;
 
-            this.locationFromCmp = new Typeahead("#location-from", searchAirportsFn);
-            this.locationToCmp = new Typeahead("#location-to", searchAirportsFn);
+            this.locationFromCmp = new Typeahead(
+                <Element>document.querySelector("#location-from-group"),
+                searchAirportsFn, {
+                    id: "#location-from" ,
+                    placeholder: "Enter FROM location",
+                    label: "FROM location"
+                });
 
-            this.datePickerCmp = new Datepicker("#date");
+            this.locationToCmp = new Typeahead(
+                <Element>document.querySelector("#location-to-group"),
+                searchAirportsFn, {
+                    id: "#location-to" ,
+                    placeholder: "Enter TO location",
+                    label: "TO location"
+                });
 
-            document
-                .querySelector("#flight-search-btn")
-                .addEventListener("click", this.searchFlight.bind(this));
+            this.datePickerCmp = new Datepicker(
+                <Element>document.querySelector("#date-group"), {
+                    id: "#date" ,
+                    placeholder: "Select travel date",
+                    label: "Date"
+                });
+
+            if (submitButton = <Element>document.querySelector("#flight-search-btn")) {
+                submitButton.addEventListener("click", this.searchFlights.bind(this));
+            }
         }, 0);
     }
 }

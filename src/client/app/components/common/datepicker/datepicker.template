@@ -1,0 +1,5 @@
+<div>
+    <label {{#if id}} id="{{id}}" {{/if}}>{{label}}</label>
+    <input type="text" class="form-control input-lg" {{#if id}} id="{{id}}" {{/if}} aria-describedby="date" placeholder="{{placeholder}}">
+    <small class="error"></small>
+</div>

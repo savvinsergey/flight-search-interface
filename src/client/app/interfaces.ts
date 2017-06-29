@@ -1,8 +1,22 @@
 
 // --------- Common interfaces -----------
 
+export interface IParamsCommonCmp {
+    id?: string;
+    placeholder?: string;
+    label?: string;
+}
+
+export interface IFormError {
+    element: Element;
+    message: string;
+}
+
 export interface IComponent {
+    template: any;
+    element: Element;
     render: (data: Object) => void;
+    validate?: (data: Object) => IFormError[];
     destroy?: () => void;
 }
 

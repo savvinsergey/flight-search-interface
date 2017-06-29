@@ -1,0 +1,6 @@
+<div>
+    <label {{#if id}} id="{{id}}" {{/if}}>{{label}}</label>
+    <input type="text" class="form-control input-lg" {{#if id}} id="{{id}}" {{/if}}
+                       data-provide="typeahead" autocomplete="off"  placeholder="{{placeholder}}">
+    <small class="error"></small>
+</div>

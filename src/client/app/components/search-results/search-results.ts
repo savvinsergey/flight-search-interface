@@ -14,8 +14,8 @@ interface IRenderData {
 // ----------- Component code ------------
 
 export class SearchResults implements IComponent {
-    private template: any;
-    private element: Element;
+    public template: any;
+    public element: Element;
 
     constructor(private container: Element) {
         this.template = require("./search-results.template");
@@ -27,11 +27,15 @@ export class SearchResults implements IComponent {
         return data;
     }
 
-    public destroy() {
+    public destroy(): void {
         this.element.remove();
     }
 
     public render(data: IRenderData): void {
+        if (this.element) {
+            this.destroy();
+        }
+
         this.element = $(this.template(
             this.preProcessingData(data)
         )).appendTo(this.container).get(0);

@@ -52,15 +52,14 @@ export interface IFlight {
 export default class FlightsModel {
     public flights: {
         (key: string): IFlight[]
-    } | {};
+    } | {} = {};
 
     find(airline: string,
          locationFrom: string,
          locationTo: string,
          date: string): Promise<any> {
 
-        return new Promise((resolve, reject) => {
-            axios.get('http://localhost:3000/flights_search/' + airline, {
+        return axios.get('http://localhost:3000/flights_search/' + airline, {
                 params: {
                     from: locationFrom,
                     to: locationTo,
@@ -68,27 +67,34 @@ export default class FlightsModel {
                 }
             })
             .then((response: IFindResponse) => {
-                if (response.data) {
-                    for (let index = 0; index < response.data.flights.length; index++) {
-                        let startDateTime: string =  response.data.flights[index].start.dateTime;
-                        response.data.flights[index].start.dateTime = moment(startDateTime).format('MM/DD/YYYY, h:mm a');
-
-                        let finishDateTime: string =  response.data.flights[index].finish.dateTime;
-                        response.data.flights[index].finish.dateTime = moment(finishDateTime).format('MM/DD/YYYY, h:mm a');
-                    }
-
-                    if (!this.flights[date]) {
-                        this.flights[date] = [];
-                    }
-
-                    this.flights[date].push(...response.data.flights);
-                    resolve(true);
+                if (!response || !response.data) {
+                    return Promise.reject(`Date: ${date} Message: Response obj is empty`);
                 }
+
+                for (let index = 0; index < response.data.length; index++) {
+                    let startDateTime: string =  response.data[index].start.dateTime;
+                    response.data[index].start.dateTime = moment(startDateTime).format('MM/DD/YYYY, h:mm a');
+
+                    let finishDateTime: string =  response.data[index].finish.dateTime;
+                    response.data[index].finish.dateTime = moment(finishDateTime).format('MM/DD/YYYY, h:mm a');
+                }
+
+                if (!this.flights[date]) {
+                    this.flights[date] = [];
+                }
+
+                this.flights[date].push(...response.data);
+
+                return Promise.resolve(true);
             })
-            .catch((err: AxiosError) => {
-                reject(`Type: ${err.response.data.name}; Message: ${err.response.data.message}`);
+            .catch((err: AxiosError | string) => {
+                throw new Error(
+                    typeof err !== "string"
+                    ? `Type: ${err.response && err.response.data.name}; Date: ${date}; Message: ${err.response && err.response.data.message}`
+                    : err
+                );
             });
-        });
+
     }
 }
 

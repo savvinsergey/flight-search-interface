@@ -5,8 +5,8 @@ import {SearchForm} from './components/search-form/search-form.ts';
 export class App {
     public components: IApp;
 
-    public constructor(context: string) {
-        let container: Element = document.querySelector(context);
+    constructor(context: string) {
+        let container: Element = <Element>document.querySelector(context);
 
         // Initialize main components
         this.components = {

@@ -24,29 +24,38 @@ export interface IAirport {
 
 export default class AirportsModel {
     searchByName(query: string): Promise<any> {
-        return new Promise((resolve, reject) => {
-            axios.get("http://localhost:3000/airports", {
-                    params: {
-                        q: query
-                    }
-                })
-                .then((response: ISearchByNameResponse) => {
-                    let airports: Object[] = [];
-                    if (response.data.airports.length) {
-                        for (let airport of response.data.airports) {
-                            airports.push({
-                                code: airport.airportCode,
-                                name: airport.airportName,
-                            });
-                        }
-                    }
+        return axios.get("http://localhost:3000/airports", {
+                params: {
+                    q: query
+                }
+            })
+            .then((response: ISearchByNameResponse) => {
+                if (!response || !response.data) {
+                    return Promise.reject("Response obj is empty");
+                }
 
-                    resolve(airports);
-                })
-                .catch((err: AxiosError) => {
-                    reject(`Type: ${err.response.data.name}; Message: ${err.response.data.message}`);
-                });
-        });
+                if (!response.data.length) {
+                    return Promise.reject("List of airports is empty");
+                }
+
+                let airports: Object[] = [];
+                for (let airport of response.data) {
+                    airports.push({
+                        code: airport.airportCode,
+                        name: airport.airportName,
+                    });
+                }
+
+                return Promise.resolve(airports);
+            })
+            .catch((err: AxiosError | string) => {
+                throw new Error(
+                    typeof err !== "string"
+                    ? `Type: ${err.response && err.response.data.name}; Message: ${err.response && err.response.data.message}`
+                    : err
+                );
+            });
+
     }
 }
 
